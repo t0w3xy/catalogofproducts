@@ -1,61 +1,39 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { api, setToken, getToken } from '../api'
 
-/*
-  Учебная авторизация без сервера:
-  - пользователи хранятся в localStorage ("users")
-  - текущая сессия — в localStorage ("session")
-  В реальном проекте пароли хранит и проверяет бэкенд (с хэшированием).
-*/
 const AuthContext = createContext(null)
 
-function read(key, fallback) {
-  try {
-    const value = localStorage.getItem(key)
-    return value ? JSON.parse(value) : fallback
-  } catch {
-    return fallback
-  }
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => read('session', null))
+  const [user, setUser] = useState(null)
+  // пока проверяем сохранённый токен, показываем «Загрузка»
+  const [checking, setChecking] = useState(() => Boolean(getToken()))
 
-  function startSession(u) {
-    const session = { name: u.name, email: u.email }
-    localStorage.setItem('session', JSON.stringify(session))
-    setUser(session)
+  useEffect(() => {
+    if (!getToken()) return
+    api('/auth/me')
+      .then((data) => setUser(data.user))
+      .catch(() => setToken(null))
+      .finally(() => setChecking(false))
+  }, [])
+
+  async function authenticate(path, email, password) {
+    const data = await api(path, { method: 'POST', body: { email, password } })
+    setToken(data.token)
+    setUser(data.user)
   }
 
-  function register(name, email, password) {
-    const users = read('users', [])
-    if (users.some((u) => u.email === email)) {
-      return { ok: false, error: 'Пользователь с таким email уже существует' }
-    }
-    const newUser = { name, email, password }
-    localStorage.setItem('users', JSON.stringify([...users, newUser]))
-    startSession(newUser)
-    return { ok: true }
+  const value = {
+    user,
+    checking,
+    register: (email, password) => authenticate('/auth/register', email, password),
+    login: (email, password) => authenticate('/auth/login', email, password),
+    logout: () => {
+      setToken(null)
+      setUser(null)
+    },
   }
 
-  function login(email, password) {
-    const found = read('users', []).find(
-      (u) => u.email === email && u.password === password
-    )
-    if (!found) return { ok: false, error: 'Неверный email или пароль' }
-    startSession(found)
-    return { ok: true }
-  }
-
-  function logout() {
-    localStorage.removeItem('session')
-    setUser(null)
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, register, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

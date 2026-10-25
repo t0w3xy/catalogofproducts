@@ -24,7 +24,7 @@ function cartReducer(state, action) {
 
 function loadCart() {
   try {
-    return JSON.parse(localStorage.getItem('cart')) || []
+    return JSON.parse(localStorage.getItem('cart_v2')) || []
   } catch {
     return []
   }
@@ -34,7 +34,7 @@ export function CartProvider({ children }) {
   const [items, dispatch] = useReducer(cartReducer, [], loadCart)
 
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items))
+    localStorage.setItem('cart_v2', JSON.stringify(items))
   }, [items])
 
   const total = items.reduce((sum, i) => sum + i.price * i.qty, 0)

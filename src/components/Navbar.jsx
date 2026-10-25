@@ -17,20 +17,24 @@ function Navbar() {
   return (
     <nav className="nav">
       <NavLink to="/" end>Главная</NavLink>
-      <NavLink to="/catalog">Каталог</NavLink>
+      <NavLink to="/catalog">Услуги</NavLink>
       <NavLink to="/cart">Корзина ({count})</NavLink>
-      {user && <NavLink to="/dashboard">Кабинет</NavLink>}
+      <NavLink to="/about">О нас</NavLink>
+      {user && <NavLink to="/dashboard">Профиль</NavLink>}
 
       <span className="spacer" />
 
       <button onClick={toggleTheme}>
-        {theme === 'light' ? ' Тёмная' : ' Светлая'}
+        {theme === 'light' ? '🌙 Тёмная' : '☀️ Светлая'}
       </button>
 
       {user ? (
-        <button onClick={handleLogout}>Выйти ({user.name})</button>
+        <button onClick={handleLogout}>Выйти</button>
       ) : (
-        <NavLink to="/login">Войти</NavLink>
+        <>
+          <NavLink to="/login">Войти</NavLink>
+          <NavLink to="/register">Регистрация</NavLink>
+        </>
       )}
     </nav>
   )
